@@ -11,7 +11,7 @@ jobs:
 
   populate-labels:
     name: Populate labels
-    uses: canonical/charmed-kubeflow-workflows/.github/workflows/populate-labels.yaml@manos-backport-automation
+    uses: canonical/charmed-kubeflow-workflows/.github/workflows/populate_labels.yaml@manos-backport-automation
     secrets: inherit
     with:
       track_file_path: ".github/automatic_backport_tracks.yaml"
