@@ -9,6 +9,11 @@ on:
 
 jobs:
 
+  populate-labels:
+    name: Populate labels
+    uses: canonical/charmed-kubeflow-workflows/.github/workflows/terraform-checks.yaml@manos-backport-automation
+    secrets: inherit
+  
   tests:
     name: Run Tests
     uses: ./.github/workflows/integrate.yaml
