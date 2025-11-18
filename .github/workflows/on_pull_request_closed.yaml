@@ -15,10 +15,9 @@ jobs:
   backport:
     name: Backport pull request
     if: github.event.pull_request.merged
-    uses: canonical/charmed-kubeflow-workflows/.github/workflows/populate_labels.yaml@manos-backport-automation
+    uses: canonical/charmed-kubeflow-workflows/.github/workflows/backport_pr.yaml@manos-backport-automation
     # secrets: inherit
     secrets:
       CHACI_GPG_PRIVATE: $ {{ secrets.CHACI_GPG_PRIVATE }}
       CHACI_GPG_PASSPHRASE: $ {{ secrets.CHACI_GPG_PASSPHRASE }}
-      GH_USER_EMAIL: $ {{ secrets.GH_USER_EMAIL }}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
