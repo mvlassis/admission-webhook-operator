@@ -20,6 +20,6 @@ jobs:
     uses: canonical/charmed-kubeflow-workflows/.github/workflows/backport_pr.yaml@manos-backport-automation
     # secrets: inherit
     secrets:
-      CHACI_GPG_PRIVATE: $ {{ secrets.CHACI_GPG_PRIVATE }}
-      CHACI_GPG_PASSPHRASE: $ {{ secrets.CHACI_GPG_PASSPHRASE }}
-      GH_TOKEN: $ {{ secrets.GH_TOKEN }}
+      CHACI_GPG_PRIVATE: ${{ secrets.CHACI_GPG_PRIVATE }}
+      CHACI_GPG_PASSPHRASE: ${{ secrets.CHACI_GPG_PASSPHRASE }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
