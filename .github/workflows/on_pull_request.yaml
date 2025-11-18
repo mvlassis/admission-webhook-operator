@@ -3,6 +3,7 @@ name: On Pull Request
 # On pull_request, we:
 # * always publish to charmhub at latest/edge/branchname
 # * always run tests
+#
 
 on:
   pull_request:
@@ -11,8 +12,13 @@ jobs:
 
   populate-labels:
     name: Populate labels
-    uses: canonical/charmed-kubeflow-workflows/.github/workflows/terraform-checks.yaml@manos-backport-automation
-    secrets: inherit
+    uses: canonical/charmed-kubeflow-workflows/.github/workflows/populate_labels.yaml@manos-backport-automation
+    # secrets: inherit
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    with:
+      track_file_path: ".github/automatic_backport_tracks.yaml"
+      label_prefix: "backport "
   
   tests:
     name: Run Tests
