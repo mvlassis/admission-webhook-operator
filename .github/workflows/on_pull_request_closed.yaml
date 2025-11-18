@@ -20,4 +20,4 @@ jobs:
     secrets:
       CHACI_GPG_PRIVATE: $ {{ secrets.CHACI_GPG_PRIVATE }}
       CHACI_GPG_PASSPHRASE: $ {{ secrets.CHACI_GPG_PASSPHRASE }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: $ {{ secrets.GH_TOKEN }}
