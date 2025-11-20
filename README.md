@@ -12,4 +12,4 @@ To install the Admission Webhook, run:
 
 For more information, see https://juju.is/docs
 
-New README.md! yee
+New README.md! yees
