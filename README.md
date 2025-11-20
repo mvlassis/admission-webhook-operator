@@ -11,5 +11,3 @@ To install the Admission Webhook, run:
     juju deploy admission-webhook
 
 For more information, see https://juju.is/docs
-
-New README.md!
