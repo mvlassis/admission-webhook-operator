@@ -4,7 +4,7 @@
 This charm encompasses the Kubernetes Python operator for Kubeflow's Admission Webhook (see
 [CharmHub](https://charmhub.io/?q=admission-webhook)).
 
-## Install.
+## Install
 
 To install the Admission Webhook, run:
 
