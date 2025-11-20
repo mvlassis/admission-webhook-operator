@@ -12,6 +12,7 @@ jobs:
 
   populate-labels:
     name: Populate labels
+    if: github.base_ref == 'main'
     uses: canonical/charmed-kubeflow-workflows/.github/workflows/populate-labels.yaml@manos-backport-automation
     # secrets: inherit
     secrets:
