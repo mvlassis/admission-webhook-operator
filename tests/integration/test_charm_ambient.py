@@ -14,6 +14,7 @@ from charmed_kubeflow_chisme.testing import (
     assert_logging,
     assert_security_context,
     deploy_and_assert_grafana_agent,
+    deploy_and_integrate_service_mesh_charms,
     generate_container_securitycontext_map,
     get_pod_names,
 )
@@ -31,6 +32,7 @@ APP_NAME = METADATA["name"]
 CONTAINERS_SECURITY_CONTEXT_MAP = generate_container_securitycontext_map(METADATA)
 
 
+@pytest.mark.skip_if_deployed
 @pytest.mark.abort_on_fail
 async def test_build_and_deploy(ops_test: OpsTest):
     built_charm_path = await ops_test.build_charm(".")
@@ -52,6 +54,11 @@ async def test_build_and_deploy(ops_test: OpsTest):
         metrics=False,
         dashboard=False,
         logging=True,
+    )
+
+    # Deploy ambient service mesh charms and relate
+    await deploy_and_integrate_service_mesh_charms(
+        app=APP_NAME, model=ops_test.model, relate_to_ingress_route_endpoint=False
     )
 
 

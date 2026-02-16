@@ -11,16 +11,35 @@ docs: https://discourse.charmhub.io/t/admission-webhook-index/8210
 containers:
   admission-webhook:
     resource: oci-image
+    uid: 584792
+    gid: 584792
 resources:
   oci-image:
     type: oci-image
     description: Backing OCI image
     auto-fetch: true
-    upstream-source: charmedkubeflow/admission-webhook:1.10.0-8dd1032
+    upstream-source: docker.io/charmedkubeflow/admission-webhook:1.10.0-e31a578
 provides:
   pod-defaults:
     interface: pod-defaults
+  provide-cmr-mesh:
+    interface: cross_model_mesh
+    description: |
+      Access a cross-model application from catalogue via the service mesh.
+      This relation provides additional data required by the service mesh to enforce cross-model authorization policies.
 requires:
   logging:
     interface: loki_push_api
     optional: true
+  service-mesh:
+    limit: 1
+    interface: service_mesh
+    description: |
+      Subscribe this charm into a service mesh to enforce authorization policies.
+  require-cmr-mesh:
+    interface: cross_model_mesh
+    description: |
+      Allow a cross-model application access to catalogue via the service mesh.
+      This relation provides additional data required by the service mesh to enforce cross-model authorization policies.
+
+charm-user: non-root

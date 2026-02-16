@@ -25,12 +25,14 @@ class TestCharm:
     """Test class for Admission Webhook."""
 
     @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
     @patch("charm.AdmissionWebhookCharm.k8s_resource_handler")
     @patch("charm.AdmissionWebhookCharm.crd_resource_handler")
     def test_log_forwarding(
         self,
-        k8s_resource_handler: MagicMock,
         crd_resource_handler: MagicMock,
+        k8s_resource_handler: MagicMock,
+        mock_service_mesh: MagicMock,
         harness: Harness,
     ):
         """Test LogForwarder initialization."""
@@ -39,12 +41,14 @@ class TestCharm:
             mock_logging.assert_called_once_with(charm=harness.charm)
 
     @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
     @patch("charm.AdmissionWebhookCharm.k8s_resource_handler")
     @patch("charm.AdmissionWebhookCharm.crd_resource_handler")
     def test_not_leader(
         self,
-        k8s_resource_handler: MagicMock,
         crd_resource_handler: MagicMock,
+        k8s_resource_handler: MagicMock,
+        mock_service_mesh: MagicMock,
         harness: Harness,
     ):
         """Test not a leader scenario."""
@@ -53,12 +57,18 @@ class TestCharm:
         assert harness.charm.model.unit.status == WaitingStatus("Waiting for leadership")
 
     @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
+    @patch("charm.Client")
+    @patch("charm.PolicyResourceManager")
     @patch("charm.AdmissionWebhookCharm.k8s_resource_handler")
     @patch("charm.AdmissionWebhookCharm.crd_resource_handler")
     def test_no_relation(
         self,
-        k8s_resource_handler: MagicMock,
         crd_resource_handler: MagicMock,
+        k8s_resource_handler: MagicMock,
+        mock_policy_manager: MagicMock,
+        mock_client: MagicMock,
+        mock_service_mesh: MagicMock,
         harness: Harness,
     ):
         """Test no relation scenario."""
@@ -77,12 +87,18 @@ class TestCharm:
         assert harness.charm.model.unit.status == ActiveStatus("")
 
     @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
+    @patch("charm.Client")
+    @patch("charm.PolicyResourceManager")
     @patch("charm.AdmissionWebhookCharm.k8s_resource_handler")
     @patch("charm.AdmissionWebhookCharm.crd_resource_handler")
     def test_pebble_layer(
         self,
-        k8s_resource_handler: MagicMock,
         crd_resource_handler: MagicMock,
+        k8s_resource_handler: MagicMock,
+        mock_policy_manager: MagicMock,
+        mock_client: MagicMock,
+        mock_service_mesh: MagicMock,
         harness: Harness,
     ):
         """Test creation of Pebble layer. Only testing specific items."""
@@ -97,12 +113,14 @@ class TestCharm:
         assert pebble_plan_info["services"]["admission-webhook"]["command"] == "/webhook"
 
     @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
     @patch("charm.AdmissionWebhookCharm.k8s_resource_handler")
     @patch("charm.AdmissionWebhookCharm.crd_resource_handler")
     def test_apply_k8s_resources_success(
         self,
-        k8s_resource_handler: MagicMock,
         crd_resource_handler: MagicMock,
+        k8s_resource_handler: MagicMock,
+        mock_service_mesh: MagicMock,
         harness: Harness,
     ):
         """Test if K8S resource handler is executed as expected."""
@@ -113,6 +131,7 @@ class TestCharm:
         assert isinstance(harness.charm.model.unit.status, MaintenanceStatus)
 
     @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
     @patch("charm.AdmissionWebhookCharm._get_check_status")
     @patch("charm.AdmissionWebhookCharm.k8s_resource_handler")
     @patch("charm.AdmissionWebhookCharm.crd_resource_handler")
@@ -128,6 +147,7 @@ class TestCharm:
         crd_resource_handler: MagicMock,
         k8s_resource_handler: MagicMock,
         _get_check_status: MagicMock,
+        mock_service_mesh: MagicMock,
         health_check_status,
         charm_status,
         harness: Harness,
@@ -137,6 +157,9 @@ class TestCharm:
         Check on the correct charm status when health check status is UP/DOWN.
         """
         harness.set_leader(True)
+        # Mock _relation property to return None (no relation established)
+        mock_mesh_instance = mock_service_mesh.return_value
+        mock_mesh_instance._relation = None
         harness.begin_with_initial_hooks()
         harness.container_pebble_ready("admission-webhook")
 
@@ -147,6 +170,7 @@ class TestCharm:
         assert harness.charm.model.unit.status == charm_status
 
     @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
     @patch("charm.AdmissionWebhookCharm.k8s_resource_handler")
     @patch("charm.AdmissionWebhookCharm.crd_resource_handler")
     @patch("charm.update_layer")
@@ -155,12 +179,13 @@ class TestCharm:
         mocked_update_layer,
         crd_resource_handler: MagicMock,
         k8s_resource_handler: MagicMock,
-        harness,
+        mock_service_mesh: MagicMock,
+        harness: Harness,
     ):
         """
         Checks that when the container is not reachable and install hook fires:
         * unit status is set to MaintenanceStatus('Pod startup is not complete').
-        * a warning is logged with "Cannot upload certificates: Failed to connect with container".
+        * a warning is logged with "Connection cannot be established with container".
         * update_layer is not called.
         """
         # Arrange
@@ -177,11 +202,12 @@ class TestCharm:
         # Assert
         assert harness.charm.model.unit.status == MaintenanceStatus("Pod startup is not complete")
         harness.charm.logger.warning.assert_called_with(
-            "Cannot upload certificates: Failed to connect with container"
+            "Connection cannot be established with container"
         )
         mocked_update_layer.assert_not_called()
 
     @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
     @pytest.mark.parametrize(
         "cert_data_dict, should_certs_refresh",
         [
@@ -205,7 +231,7 @@ class TestCharm:
         ],
     )
     def test_gen_certs_if_missing(
-        self, cert_data_dict, should_certs_refresh, harness: Harness, mocker
+        self, mock_service_mesh, cert_data_dict, should_certs_refresh, harness: Harness, mocker
     ):
         """Test _gen_certs_if_missing.
         This tests whether _gen_certs_if_missing:
@@ -227,3 +253,140 @@ class TestCharm:
 
         # Assert that we have/have not called refresh_certs, as expected
         assert mocked_gen_certs.called == should_certs_refresh
+
+    @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
+    @patch("charm.Client")
+    @patch("charm.PolicyResourceManager")
+    def test_reconcile_policy_resource_manager_with_mesh(
+        self,
+        mock_policy_manager_class: MagicMock,
+        mock_client: MagicMock,
+        mock_service_mesh: MagicMock,
+        harness: Harness,
+    ):
+        """Test _reconcile_policy_resource_manager when service-mesh relation is present."""
+        harness.begin()
+        harness.set_leader(True)
+
+        # Mock _relation property to indicate a relation exists
+        mock_mesh_instance = mock_service_mesh.return_value
+        mock_mesh_instance._relation = MagicMock()  # Relation exists
+        mock_mesh_instance.mesh_type = "istio"
+
+        # Mock the policy resource manager instance
+        mock_policy_manager = mock_policy_manager_class.return_value
+
+        harness.charm._reconcile_policy_resource_manager()
+
+        # Verify reconcile was called with correct parameters
+        mock_policy_manager.reconcile.assert_called_once_with(
+            policies=[], mesh_type="istio", raw_policies=[harness.charm._allow_all_policy]
+        )
+
+    @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
+    @patch("charm.Client")
+    @patch("charm.PolicyResourceManager")
+    def test_reconcile_policy_resource_manager_without_mesh(
+        self,
+        mock_policy_manager_class: MagicMock,
+        mock_client: MagicMock,
+        mock_service_mesh: MagicMock,
+        harness: Harness,
+    ):
+        """Test _reconcile_policy_resource_manager when service-mesh relation is not present."""
+        harness.begin()
+        harness.set_leader(True)
+
+        # Mock _relation property to return None (no relation established)
+        mock_mesh_instance = mock_service_mesh.return_value
+        mock_mesh_instance._relation = None
+
+        # Mock the policy resource manager instance
+        mock_policy_manager = mock_policy_manager_class.return_value
+
+        harness.charm._reconcile_policy_resource_manager()
+
+        # Verify reconcile was NOT called when there's no service-mesh relation
+        mock_policy_manager.reconcile.assert_not_called()
+
+    @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
+    @patch("charm.Client")
+    @patch("charm.PolicyResourceManager")
+    def test_remove_authorization_policies(
+        self,
+        mock_policy_manager_class: MagicMock,
+        mock_client: MagicMock,
+        mock_service_mesh: MagicMock,
+        harness: Harness,
+    ):
+        """Test _remove_authorization_policies method."""
+        harness.begin()
+
+        # Mock the policy resource manager instance
+        mock_policy_manager = mock_policy_manager_class.return_value
+
+        harness.charm._remove_authorization_policies(None)
+
+        # Verify delete was called
+        mock_policy_manager.delete.assert_called_once()
+
+    @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
+    @patch("charm.Client")
+    @patch("charm.PolicyResourceManager")
+    @patch("charm.AdmissionWebhookCharm.k8s_resource_handler")
+    @patch("charm.AdmissionWebhookCharm.crd_resource_handler")
+    def test_on_remove_calls_remove_authorization_policies(
+        self,
+        crd_resource_handler: MagicMock,
+        k8s_resource_handler: MagicMock,
+        mock_policy_manager_class: MagicMock,
+        mock_client: MagicMock,
+        mock_service_mesh: MagicMock,
+        harness: Harness,
+    ):
+        """Test that _on_remove calls _remove_authorization_policies."""
+        harness.begin()
+        harness.set_leader(True)
+
+        # Mock render_manifests to return empty list
+        k8s_resource_handler.render_manifests.return_value = []
+        crd_resource_handler.render_manifests.return_value = []
+
+        # Mock the policy resource manager instance
+        mock_policy_manager = mock_policy_manager_class.return_value
+
+        harness.charm._on_remove(None)
+
+        # Verify _remove_authorization_policies was called (which calls delete)
+        mock_policy_manager.delete.assert_called()
+
+    @patch("charm.KubernetesServicePatch", lambda x, y, service_name: None)
+    @patch("charm.ServiceMeshConsumer")
+    @patch("charm.Client")
+    @patch("charm.PolicyResourceManager")
+    def test_service_mesh_relation_broken(
+        self,
+        mock_policy_manager_class: MagicMock,
+        mock_client: MagicMock,
+        mock_service_mesh: MagicMock,
+        harness: Harness,
+    ):
+        """Test that service-mesh relation broken event removes authorization policies."""
+        harness.begin()
+
+        # Mock the policy resource manager instance
+        mock_policy_manager = mock_policy_manager_class.return_value
+
+        # Add a service-mesh relation
+        relation_id = harness.add_relation("service-mesh", "istio-pilot")
+        harness.add_relation_unit(relation_id, "istio-pilot/0")
+
+        # Break the relation
+        harness.remove_relation(relation_id)
+
+        # Verify that delete was called when relation was broken
+        mock_policy_manager.delete.assert_called()

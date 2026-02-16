@@ -51,6 +51,10 @@ jobs:
   integration:
     name: Integration Tests
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        test-type: [integration, integration-ambient]
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -65,9 +69,17 @@ jobs:
         sudo snap install concierge --classic
         sudo concierge prepare --trace
 
+    - name: Configure Cilium for Canonical K8s
+      if: matrix.test-type == 'integration-ambient'
+      run: |
+        # Configure Cilium for Canonical K8s to work with Charmed Istio (Ambient mode)
+        # See https://canonical-service-mesh-documentation.readthedocs-hosted.com/en/latest/how-to/use-charmed-istio-with-canonical-kubernetes/
+        kubectl -n kube-system patch configmap cilium-config --type merge --patch '{"data":{"bpf-lb-sock-hostns-only":"true"}}'
+        kubectl -n kube-system rollout restart daemonset cilium
+
     - name: Test
       run: |
-        tox -vve integration -- --model testing
+        tox -vve ${{ matrix.test-type }} -- --model testing
 
     # On failure, capture debugging resources
     - name: Get all
