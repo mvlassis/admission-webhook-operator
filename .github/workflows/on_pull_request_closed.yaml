@@ -22,5 +22,3 @@ jobs:
     uses: mvlassis/charmed-kubeflow-workflows/.github/workflows/backport-pr.yaml@main
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
